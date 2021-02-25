@@ -11,6 +11,10 @@ const { getDockerProcess, getExecutionTimeAllotment } = require("./utils");
 
 let db = redis.createClient(constants.redisConnectionOptions);
 let sub = redis.createClient(constants.redisConnectionOptions);
+
+sub.on('ready', function () {
+  console.log('Connected to redis');
+});
 sub.subscribe(constants.pubSubName);
 
 bluebird.promisifyAll(redis.RedisClient.prototype);
@@ -23,7 +27,7 @@ function start() {
 }
 
 ["grader/java", "downloads"].forEach(folder => {
-  fs.mkdir(folder, function(err) {
+  fs.mkdir(folder, function (err) {
     console.log(err || `${folder} already exists`);
   });
 });
@@ -31,6 +35,7 @@ function start() {
 function messagePromise() {
   return new Promise((resolve, reject) => {
     sub.once("message", (channel, message) => {
+      console.log(`${message}`);
       resolve();
     });
   });
@@ -40,6 +45,7 @@ async function listen() {
   let queueLength = 0;
   while (true) {
     queueLength = await db.llenAsync(constants.queueName);
+    console.log(`Queue length: ${queueLength}`);
     if (queueLength == 0) {
       await messagePromise();
     } else {
@@ -75,6 +81,7 @@ async function processTestCase(timeAllotment) {
         .death();
     } else {
       await cw.process(`mkdir grader/java/${folderkey}`).death();
+
       await cw
         .process(
           `wget -O grader/java/${folderkey}/${classname}.java ${constants.webServerIP}/uploads/${folderkey}`
@@ -143,7 +150,7 @@ async function runTestCase(filedata, files, totalTimeout) {
         if (totalTimeout < constants.timeouts.maxTotalExecution) {
           result.runtimeError +=
             `\nYour submission was given a ${totalTimeout /
-              1000}s to finish all test cases, based on the size of the current queue.\n` +
+            1000}s to finish all test cases, based on the size of the current queue.\n` +
             "If you need more time, try submitting when there are fewer submissions in the queue.";
         }
       } else {

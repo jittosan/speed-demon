@@ -1,6 +1,6 @@
 module.exports = {
-  BJCMC3b6W: {
+  yuchuan: {
     secret: "yuchuan",
-    classname: "YuanPS5"
+    classname: "SpeedDemon"
   }
 };

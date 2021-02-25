@@ -14,17 +14,22 @@ router.use("/uploads", express.static("uploads"));
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
-fs.mkdir("uploads", function(err) {
+fs.mkdir("uploads", function (err) {
   console.log(err || "uploads folder created");
 });
 var db = redis.createClient(constants.redisConnectionOptions);
 
-db.on("error", function(err) {
+db.on("error", function (err) {
   console.error("error");
 });
 
+db.on('ready', function () {
+  console.log('Connected to redis');
+  db.publish(constants.pubSubName, "Hello");
+});
+
 /* Home page: Leaderboard */
-router.get("/", function(req, res, next) {
+router.get("/", function (req, res, next) {
   Promise.all([
     db.zrangeAsync([constants.leaderboardKey, 0, 15, "WITHSCORES"]),
     db.zrangebyscoreAsync([constants.cheatersKey, "-inf", "+inf"])
@@ -50,7 +55,7 @@ router.get("/", function(req, res, next) {
   });
 });
 
-router.get("/submit", async function(req, res, next) {
+router.get("/submit", async function (req, res, next) {
   let queueLength = await db.llenAsync(constants.queueName);
   res.render("upload", { title: "New Submission", queueLength });
 });
@@ -84,8 +89,9 @@ router.post("/submit", async (req, res, next) => {
     data.type = "zip";
   } else if (req.files.file.name.includes(".zip")) {
     data.type = "zip";
-  } else if (req.files.file.name.includes(".java")) data.type = "java";
-  else {
+  } else if (req.files.file.name.includes(".java")) {
+    data.type = "java";
+  } else {
     console.log(req.files.file);
     return res.render("upload", {
       title: "New Submission",
@@ -106,13 +112,15 @@ router.post("/submit", async (req, res, next) => {
       db.lpushAsync(constants.queueName, JSON.stringify(data))
     ]);
 
-    db.publish(constants.pubSubName, "new");
+    db.publishAsync(constants.pubSubName, "new").then(() => {
+      console.log(`Sent a message to grader`);
+    });
 
     res.redirect(`/submission/${id}`);
   });
 });
 
-router.get("/submission/:id", function(req, res, next) {
+router.get("/submission/:id", function (req, res, next) {
   console.log(req.params["id"]);
   if (!shortid.isValid(req.params["id"])) {
     return db.llenAsync(constants.queueName).then(length => {

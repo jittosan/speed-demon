@@ -2,7 +2,7 @@ const fs = require("fs");
 
 // Automatically reads from .in files in grader/testfiles
 var testfiles = {};
-fs.mkdir("grader/testcases", function(err) {
+fs.mkdir("grader/testcases", function (err) {
   console.log(err || "testcases already exists");
 });
 var files = fs
