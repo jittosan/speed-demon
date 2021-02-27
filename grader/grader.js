@@ -7,7 +7,7 @@ let fs = require("fs");
 
 const constants = require("../constants");
 const testfiles = constants.testfiles;
-const { getDockerProcess, getExecutionTimeAllotment } = require("./utils");
+const { getDockerCommand, getExecutionTimeAllotment } = require("./utils");
 
 let db = redis.createClient(constants.redisConnectionOptions);
 let sub = redis.createClient(constants.redisConnectionOptions);
@@ -93,10 +93,11 @@ async function processTestCase(timeAllotment) {
   }
   let compileProcess;
   try {
-    compileProcess = getDockerProcess(
+    compileProcess = getDockerCommand(
       `javac -cp /submission ./submission/${classname}.java`,
       [`grader/java/${folderkey}:/submission`]
     );
+    compileProcess = cw.process(compileProcess);
     await compileProcess.death();
   } catch (e) {
     console.error(e);
@@ -118,6 +119,8 @@ async function runTestCase(filedata, files, totalTimeout) {
   let result = { success: false, results: {} };
   let proc;
   let timedOut = false;
+  let startTime = 0;
+  let runTime = 0;
   setTimeout(() => {
     if (proc.instance.instance.isRunning) {
       timedOut = true;
@@ -125,8 +128,7 @@ async function runTestCase(filedata, files, totalTimeout) {
     }
   }, totalTimeout);
   for (let filename of files) {
-    let startTime = Date.now();
-    proc = getDockerProcess(
+    proc = getDockerCommand(
       `java -classpath /submission -Xmx1500m ${filedata.classname} /testfile`,
       [
         `grader/java/${filedata.key}:/submission`,
@@ -135,9 +137,12 @@ async function runTestCase(filedata, files, totalTimeout) {
         `grader/testcases/${filename}:/testfile:ro`
       ]
     );
+    startTime = Date.now();
+    proc = cw.process(proc);
 
     try {
       await proc.death();
+      runTime = Date.now() - startTime;
       // Sometimes it gets killed but exits with 0
       if (timedOut) {
         throw Exception();
@@ -170,8 +175,7 @@ async function runTestCase(filedata, files, totalTimeout) {
     let output = proc.instance.instance.output.join("");
     console.log(`completed ${filename} ${output}`);
     if (output == testfiles[filename]) {
-      let runtime = Date.now() - startTime;
-      result.results[filename] = runtime;
+      result.results[filename] = runTime;
       continue;
     } else {
       result.results[filename] = false;
