@@ -30,6 +30,6 @@ fs.createReadStream(filename)
   .on("end", async () => {
     await Promise.all(promises);
     let results = await db.hgetallAsync(constants.secretsNamesKey);
-    console.log(results.length);
+    console.log(Object.keys(results).length);
     console.log(results);
   });
