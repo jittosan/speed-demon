@@ -210,15 +210,19 @@ async function complete(filedata, results) {
     let name = await db.hgetAsync(constants.secretsNamesKey, filedata.secret);
     console.log(name);
 
+    let timeMin = time;
     if (name != null && name != undefined) {
-      console.log(`remove ${constants.leaderboardKey}, ${name}`);
+      let temp = await db.zscoreAsync(constants.leaderboardKey, name);
+      let newFaster = parseFloat(time) < parseFloat(temp);
+      console.log(`new run is faster: ${newFaster}`);
+      timeMin = newFaster ? time : temp;
       promises.push(db.zremAsync(constants.leaderboardKey, name));
     }
 
     promises.push(
       db.hsetAsync(constants.secretsNamesKey, filedata.secret, name)
     );
-    promises.push(db.zaddAsync(constants.leaderboardKey, time, name));
+    promises.push(db.zaddAsync(constants.leaderboardKey, timeMin, name));
   }
   await Promise.all(promises);
 }
