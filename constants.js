@@ -1,4 +1,5 @@
 const fs = require("fs");
+require("dotenv").config();
 
 // Automatically reads from .in files in grader/testfiles
 var testfiles = {};
@@ -40,6 +41,7 @@ module.exports = {
   leaderboardKey: "leaderboard",
   cheatersKey: "cheaters",
   secretsNamesKey: "secretName",
+  inQueueKey: "inQueue",
   webServerIP: process.env.SERVER_URL || "127.0.0.1:3000",
   redisConnectionOptions: process.env.REDIS_URL || {},
   validKeys: (process.env.VALID_KEYS || "").split(",").reduce((hash, key) => {

@@ -1,8 +1,5 @@
-const {
-  minTotalExecution,
-  maxTotalExecution,
-  targetWaitTime
-} = require("../constants").timeouts;
+const { minTotalExecution, maxTotalExecution, targetWaitTime } =
+    require("../constants").timeouts;
 
 const cwd = process.cwd();
 
@@ -15,12 +12,12 @@ Return the executable java code in a docker container. This gives us several adv
 4. More portable, since we don't have to mess with a possibly existing java installation. 
 */
 function getDockerCommand(command, volumes = []) {
-  let docker_command = ["docker run --rm --network none"];
-  docker_command.push(...volumes.map(vol => `-v ${cwd}/${vol}`));
-  docker_command.push("openjdk:12");
-  docker_command.push(command);
-  console.log(docker_command.join(" "));
-  return docker_command.join(" ");
+    let docker_command = ["docker run --rm --network none"];
+    docker_command.push(...volumes.map((vol) => `-v ${cwd}/${vol}`));
+    docker_command.push("openjdk:12");
+    docker_command.push(command);
+    console.log(docker_command.join(" "));
+    return docker_command.join(" ");
 }
 
 /**
@@ -29,16 +26,18 @@ function getDockerCommand(command, volumes = []) {
  * @param int queueLength
  */
 function getExecutionTimeAllotment(queueLength) {
-  // no divide by 0
-  let proportionateTime = targetWaitTime / Math.max(queueLength, 1);
-  // in case too many people are in the queue, give the minimum amount of time
-  let givenTime = Math.max(proportionateTime, minTotalExecution);
-  // Give at most the maxTotalExecution time
-  console.log(`Given ${Math.min(givenTime, maxTotalExecution)} millis to run.`);
-  return Math.min(givenTime, maxTotalExecution);
+    // no divide by 0
+    let proportionateTime = targetWaitTime / Math.max(queueLength, 1);
+    // in case too many people are in the queue, give the minimum amount of time
+    let givenTime = Math.max(proportionateTime, minTotalExecution);
+    // Give at most the maxTotalExecution time
+    console.log(
+        `Given ${Math.min(givenTime, maxTotalExecution)} millis to run.`
+    );
+    return Math.min(givenTime, maxTotalExecution);
 }
 
 module.exports = {
-  getDockerCommand,
-  getExecutionTimeAllotment
+    getDockerCommand,
+    getExecutionTimeAllotment,
 };
