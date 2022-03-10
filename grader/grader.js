@@ -92,7 +92,7 @@ async function processTestCase(timeAllotment) {
         }
     } catch (e) {
         console.log(e);
-        return await error(filedata, "Download Error");
+        return await error(filedata, "Error retrieving file");
     }
     let compileProcess;
     try {
