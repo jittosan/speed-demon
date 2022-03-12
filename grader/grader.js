@@ -227,7 +227,9 @@ async function complete(filedata, results) {
 
         let timeMin = time;
         if (name != null && name != undefined) {
-            let temp = await db.zscoreAsync(constants.leaderboardKey, name);
+            let temp =
+                (await db.zscoreAsync(constants.leaderboardKey, name)) ||
+                9999999;
             let newFaster = parseFloat(time) < parseFloat(temp);
             console.log(`new run is faster: ${newFaster}`);
             timeMin = newFaster ? time : temp;
